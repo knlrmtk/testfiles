@@ -1,0 +1,63 @@
+Docker file httpd server:
+[root@docker ProDocker]# pwd
+/root/ProDocker
+[root@docker ProDocker]# ls -l
+total 28
+drwxr-xr-x 4 root root 135 Apr 23 19:35 bluetrees
+-rw-r--r-- 1 root root 338 Apr 24 02:12 dockerfile
+[root@docker ProDocker]# cat dockerfile
+FROM centos
+MAINTAINER kunal
+RUN yum install -y httpd openssl mod_ssl
+#RUN echo "The Web Server is Running" > /var/www/html/index.html
+COPY ./bluetrees /var/www/html/bluetrees
+EXPOSE 80
+CMD ["-D", "FOREGROUND"]
+ENTRYPOINT ["/usr/sbin/httpd"]
+Command to create docker image:
+# docker build -t <name_for_image> .
+Example: [root@docker ProDocker]# docker build -t apachetest . Command to run docker image to create container:
+# docker run -dit -p 80:80 <image_name>
+[root@docker ProDocker]# docker run -dit -p 80:80 apachetest
+Docker file httpd/SSL self signed Server:
+[root@docker ProDocker]# pwd
+/root/ProDocker
+[root@docker ProDocker]# ls -l
+total 28
+drwxr-xr-x 4 root root 135 Apr 23 19:35 bluetrees
+-rw-r--r-- 1 root root 338 Apr 24 02:12 dockerfile
+-rw-r--r-- 1 root root 1310 Apr 24 02:06 server.crt
+-rw-r--r-- 1 root root 1058 Apr 24 02:06 server.csr
+-rw-r--r-- 1 root root 1743 Apr 24 02:06 server.key
+-rw-r--r-- 1 root root 9548 Apr 24 02:08 ssl.conf
+[root@docker ProDocker]# cat dockerfile
+FROM centos:7
+MAINTAINER kunal
+RUN yum install -y httpd openssl mod_ssl
+#RUN echo "The Web Server is Running" > /var/www/html/index.html
+COPY ./bluetrees /var/www/html/bluetrees
+COPY ./server.crt /etc/pki/tls/certs/
+COPY ./server.key /etc/pki/tls/private/
+EXPOSE 80
+EXPOSE 443
+CMD ["-D", "FOREGROUND"]
+ENTRYPOINT ["/usr/sbin/httpd"]
+OR
+FROM centos:7
+MAINTAINER kunal
+RUN yum install -y httpd openssl mod_ssl
+#RUN echo "The Web Server is Running" > /var/www/html/index.html
+COPY ./bluetrees /var/www/html/bluetrees
+COPY ./server.crt /etc/pki/tls/certs/
+COPY ./server.key /etc/pki/tls/private/
+EXPOSE 80
+EXPOSE 443
+#CMD ["-D", "FOREGROUND"]
+#ENTRYPOINT ["/usr/sbin/httpd"]
+ENTRYPOINT ["/usr/sbin/httpd", "-D", "FOREGROUND"]
+Command to create docker image:
+# docker build -t <name_for_image> .
+Example: [root@docker ProDocker]# docker build -t apachessl . Command to run docker image to create container:
+# docker run -dit -p 80:80 -p 443:443 <image_name>
+Example:
+[root@docker ProDocker]# docker run -dit -p 80:80 -p 443:443 apachessl
