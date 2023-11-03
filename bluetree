@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS= credentials('hub325')
+        //GITHUB_CREDENTIALS= credentials('githubcredentials_ID')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+				dir ("$BUILD_PATH") {
+					//checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: '6779d022-3a45-460d-bb5e-78de24492076', url: 'https://github.com/knlrmtk/testbuild.git']]])
+					checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: '6779d022-3a45-460d-bb5e-78de24492076', url: 'https://github.com/knlrmtk/dockertest.git']]])
+				}
+            }
+		}
+		stage('Build'){
+			steps {
+				dir ("$BUILD_PATH") {
+					sh "docker build -t bluetree_$BUILD_NUMBER ."
+				}
+			}
+		}
+		//stage('Login to Docker Hub') {         
+            //steps{
+                //sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                //echo 'Login Completed'
+            //}           
+        //}               
+		
+		stage ('Push to Hub') {
+			steps {
+				//withCredentials([usernamePassowrd(credentialsId:"dockerhubadmin", passwordVariable:"dockerHubPass", usernameVariable:"dockerHubUser")])
+				//sh "docker tag helloworldall ${env.dockerHubUser}/helloworldall:latest"
+				//sh "docker tag customtomcat $DOCKERHUB_CREDENTIALS_USR/helloworldall:$BUILD_NUMBER"
+				sh "docker tag bluetree_$BUILD_NUMBER $DOCKERHUB_CREDENTIALS_USR/bluetree:latest"
+				sh "docker login -u $DOCKERHUB_CREDENTIALS_USR -p $DOCKERHUB_CREDENTIALS_PSW"
+				//sh "docker push ${env.dockerHubUser}"/helloworldall:latest
+				sh "docker push $DOCKERHUB_CREDENTIALS_USR/bluetree:latest"
+			}
+		}
+		
+		stage('Run DockerCompose') {
+            steps {
+                //sh "docker-compose -H ssh://douser@192.168.10.135 up -d"
+                sh "ssh -i /var/lib/jenkins/mykeys/douser.pem douser@192.168.10.135 'docker-compose down'"
+                sh "ssh -i /var/lib/jenkins/mykeys/douser.pem douser@192.168.10.135 'docker-compose up -d'"
+            }
+        }
+		
+    }
+}
